@@ -18,8 +18,8 @@ function generateToken() {
 function computeExpiresAt(durationValue, durationUnit) {
   if (!durationValue || !durationUnit || durationUnit === 'lifetime') return null;
 
-  const now = Date.now();
   const value = Number(durationValue);
+  const now = Date.now();
 
   const map = {
     minute: 60 * 1000,
@@ -36,11 +36,11 @@ function getMaxActivations(tipo) {
   return 1;
 }
 
-function buildBatContent({ domain, licenseKey }) {
+function buildBatContent({ domain }) {
   return `@echo off
 title Luatools Installer
-powershell -NoProfile -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm '${domain}/install-plugin.ps1'))) -LicenseKey '${licenseKey}'"
-exit`;
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm '${domain}/install-plugin.ps1' | iex"
+pause`;
 }
 
 async function logAction(action, details = {}) {
