@@ -3,156 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Licenças - Luatools</title>
+  <title>Painel de Licenças</title>
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f1115;
-      color: #fff;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-    h1, h2 { margin: 0 0 12px; }
-    .muted { color: #a0a7b4; }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 20px;
-    }
-    .card {
-      background: #171a21;
-      border: 1px solid #252a36;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 8px 20px rgba(0,0,0,.2);
-    }
-    .card + .card { margin-top: 20px; }
-    label {
-      display: block;
-      font-size: 14px;
-      color: #c6ccda;
-      margin-bottom: 6px;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background:#0f1115; color:#fff; }
+    .hidden { display:none; }
+    .login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .login-card, .card { background:#171a21; border:1px solid #252a36; border-radius:18px; padding:20px; }
+    .login-card { width:100%; max-width:420px; }
+    .container { max-width: 1300px; margin: 0 auto; padding: 24px; }
+    .topbar { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+    .grid { display:grid; grid-template-columns: 1.4fr 1fr; gap:20px; }
+    .stats { display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom:20px; }
+    .stat { background:#171a21; border:1px solid #252a36; border-radius:16px; padding:16px; }
+    .stat .label { color:#a0a7b4; font-size:13px; margin-bottom:8px; }
+    .stat .value { font-size:24px; font-weight:700; }
     input, select, textarea, button {
-      width: 100%;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 14px;
+      width:100%; padding:12px 14px; border-radius:12px; border:none; font-size:14px;
     }
-    input, select, textarea {
-      background: #0f131a;
-      color: #fff;
-      border: 1px solid #2a3140;
-      margin-bottom: 14px;
-    }
-    textarea { min-height: 90px; resize: vertical; }
-    button {
-      background: linear-gradient(135deg, #5865F2, #7b86ff);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: .2s;
-    }
-    button:hover { transform: translateY(-1px); opacity: .95; }
-    .btn-secondary {
-      background: #273043;
-    }
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .result {
-      margin-top: 16px;
-      background: #0d1e18;
-      border: 1px solid #1f5f47;
-      border-radius: 14px;
-      padding: 16px;
-      display: none;
-    }
-    .keybox {
-      font-family: monospace;
-      font-size: 20px;
-      font-weight: bold;
-      word-break: break-all;
-      color: #7df7bc;
-      margin: 8px 0 12px;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .actions button {
-      width: auto;
-      min-width: 160px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      font-size: 14px;
-    }
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid #252a36;
-      text-align: left;
-      vertical-align: top;
-    }
-    th { color: #c6ccda; font-size: 13px; }
-    code {
-      background: #0f131a;
-      border: 1px solid #252a36;
-      padding: 4px 8px;
-      border-radius: 8px;
-      color: #7df7bc;
-    }
-    .badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-    .unique { background: #173b63; color: #7dc3ff; }
-    .multi { background: #3d2b14; color: #ffc777; }
-    .lifetime { background: #173d2a; color: #86efac; }
-    .active { color: #86efac; font-weight: bold; }
-    .inactive { color: #ff8c8c; font-weight: bold; }
-    .login-screen {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      background: #171a21;
-      border: 1px solid #252a36;
-      border-radius: 18px;
-      padding: 24px;
-    }
-    .hidden { display: none; }
-    .small { font-size: 12px; color: #a0a7b4; }
-    @media (max-width: 900px) {
-      .grid, .row { grid-template-columns: 1fr; }
-      table { font-size: 13px; }
+    input, select, textarea { background:#0f131a; color:#fff; border:1px solid #2a3140; margin-bottom:12px; }
+    textarea { min-height:80px; resize:vertical; }
+    button { background:#5865F2; color:#fff; font-weight:bold; cursor:pointer; }
+    button.secondary { background:#273043; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    table { width:100%; border-collapse: collapse; margin-top:12px; }
+    th, td { padding:12px; border-bottom:1px solid #252a36; text-align:left; vertical-align:top; }
+    code { background:#0f131a; border:1px solid #252a36; padding:4px 8px; border-radius:8px; color:#7df7bc; }
+    .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:bold; }
+    .unique { background:#173b63; color:#7dc3ff; }
+    .multi { background:#3d2b14; color:#ffc777; }
+    .lifetime { background:#173d2a; color:#86efac; }
+    .active { color:#86efac; font-weight:bold; }
+    .inactive { color:#ff8c8c; font-weight:bold; }
+    .muted { color:#a0a7b4; }
+    .result { display:none; margin-top:12px; background:#0d1e18; border:1px solid #1f5f47; border-radius:14px; padding:16px; }
+    .keybox { font-family:monospace; font-size:20px; color:#7df7bc; margin-top:10px; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .actions button { width:auto; }
+    @media (max-width: 1100px) {
+      .grid, .stats, .row { grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -160,10 +49,10 @@
   <div id="loginScreen" class="login-screen">
     <div class="login-card">
       <h2>🔐 Painel Administrativo</h2>
-      <p class="muted">Digite sua senha para acessar o painel de licenças.</p>
-      <input type="password" id="adminPassword" placeholder="Senha do administrador" />
+      <p class="muted">Entre com sua senha.</p>
+      <input type="password" id="adminPassword" placeholder="Senha" />
       <button onclick="entrar()">Entrar</button>
-      <p id="loginError" class="small" style="color:#ff8c8c; margin-top:10px;"></p>
+      <p id="loginError" class="muted"></p>
     </div>
   </div>
 
@@ -171,76 +60,80 @@
     <div class="container">
       <div class="topbar">
         <div>
-          <h1>🔑 Painel de Licenças - Luatools</h1>
-          <div class="muted">Fluxo: PIX pago → gerar licença → salvar no Supabase → enviar Discord → copiar e enviar ao cliente</div>
+          <h1>🔑 Painel de Licenças</h1>
+          <div class="muted">Gerar, buscar, filtrar, ativar, resetar e excluir.</div>
         </div>
-        <button class="btn-secondary" style="width:auto;" onclick="logout()">Sair</button>
+        <button class="secondary" style="width:auto;" onclick="logout()">Sair</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="label">Total</div><div class="value" id="statTotal">0</div></div>
+        <div class="stat"><div class="label">Ativas</div><div class="value" id="statActive">0</div></div>
+        <div class="stat"><div class="label">Inativas</div><div class="value" id="statInactive">0</div></div>
+        <div class="stat"><div class="label">Expiradas</div><div class="value" id="statExpired">0</div></div>
+        <div class="stat"><div class="label">Vendas mês</div><div class="value" id="statSales">R$ 0,00</div></div>
       </div>
 
       <div class="grid">
         <div>
           <div class="card">
-            <h2>➕ Gerar nova licença</h2>
-
+            <h2>➕ Gerar licença</h2>
             <div class="row">
-              <div>
-                <label>Cliente</label>
-                <input type="text" id="customerName" placeholder="Nome do cliente" />
-              </div>
-              <div>
-                <label>Contato</label>
-                <input type="text" id="customerContact" placeholder="WhatsApp, Discord, e-mail..." />
-              </div>
+              <input id="customerName" placeholder="Nome do cliente" />
+              <input id="customerContact" placeholder="Contato do cliente" />
             </div>
-
             <div class="row">
-              <div>
-                <label>Plano</label>
-                <select id="tipo" onchange="ajustarPlano()">
-                  <option value="unique">Única (30 dias) - R$ 19,90</option>
-                  <option value="lifetime">Vitalícia - R$ 149,90</option>
-                  <option value="multi">Multi-PC (30 dias / 3 ativações) - R$ 39,90</option>
-                </select>
-              </div>
-              <div>
-                <label>Forma de pagamento</label>
-                <select id="paymentMethod">
-                  <option value="PIX">PIX</option>
-                  <option value="Cartão">Cartão</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
+              <select id="tipo" onchange="ajustarPlano()">
+                <option value="unique">Única (30 dias) - R$ 19,90</option>
+                <option value="lifetime">Vitalícia - R$ 149,90</option>
+                <option value="multi">Multi-PC (30 dias / 3 ativações) - R$ 39,90</option>
+              </select>
+              <select id="paymentMethod">
+                <option value="PIX">PIX</option>
+                <option value="Cartão">Cartão</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Outro">Outro</option>
+              </select>
             </div>
-
             <div class="row">
-              <div>
-                <label>Preço</label>
-                <input type="number" step="0.01" id="price" placeholder="19.90" />
-              </div>
-              <div>
-                <label>Máx. ativações</label>
-                <input type="number" id="maxAtivacoes" min="1" max="10" value="1" />
-              </div>
+              <input id="price" type="number" step="0.01" placeholder="Preço" />
+              <input id="maxAtivacoes" type="number" min="1" max="10" value="1" />
             </div>
-
-            <label>Observações</label>
-            <textarea id="notes" placeholder="Observações internas da venda..."></textarea>
-
-            <button onclick="gerarLicenca()">🎟️ Gerar licença</button>
+            <textarea id="notes" placeholder="Observações"></textarea>
+            <button onclick="gerarLicenca()">Gerar licença</button>
 
             <div id="resultado" class="result">
-              <div>✅ Licença gerada com sucesso</div>
-              <div class="keybox" id="generatedKey"></div>
+              <div>✅ Licença gerada</div>
+              <div id="generatedKey" class="keybox"></div>
               <div class="actions">
-                <button onclick="copiarLicenca()">📋 Copiar licença</button>
-                <button class="btn-secondary" onclick="copiarMensagemCliente()">💬 Copiar mensagem do cliente</button>
+                <button onclick="copiarLicenca()">Copiar key</button>
+                <button class="secondary" onclick="copiarMensagemCliente()">Copiar mensagem</button>
               </div>
             </div>
           </div>
 
-          <div class="card">
-            <h2>📋 Últimas licenças</h2>
+          <div class="card" style="margin-top:20px;">
+            <h2>📋 Licenças</h2>
+
+            <div class="row">
+              <input id="search" placeholder="Buscar por key, nome ou contato" oninput="carregarLicencas()" />
+              <select id="filterType" onchange="carregarLicencas()">
+                <option value="">Todos os tipos</option>
+                <option value="unique">Unique</option>
+                <option value="multi">Multi</option>
+                <option value="lifetime">Lifetime</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <select id="filterStatus" onchange="carregarLicencas()">
+                <option value="">Todos os status</option>
+                <option value="active">Ativas</option>
+                <option value="inactive">Inativas</option>
+              </select>
+              <button class="secondary" onclick="carregarTudo()">Atualizar painel</button>
+            </div>
+
             <table>
               <thead>
                 <tr>
@@ -250,7 +143,7 @@
                   <th>Ativações</th>
                   <th>Expira</th>
                   <th>Status</th>
-                  <th>Ação</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="licensesTable"></tbody>
@@ -260,26 +153,10 @@
 
         <div>
           <div class="card">
-            <h2>🔴 Bloquear HWID</h2>
-            <label>HWID</label>
-            <input type="text" id="hwid" placeholder="HWID do usuário" />
-
-            <label>Motivo</label>
-            <input type="text" id="motivo" placeholder="Motivo do bloqueio" />
-
-            <button onclick="bloquearHWID()">🚫 Bloquear HWID</button>
-          </div>
-
-          <div class="card">
-            <h2>ℹ️ Fluxo rápido</h2>
-            <p class="muted">
-              1. Cliente paga via PIX<br>
-              2. Você preenche os dados<br>
-              3. Clica em gerar licença<br>
-              4. O sistema salva no Supabase<br>
-              5. Envia aviso no Discord<br>
-              6. Você copia e manda ao cliente
-            </p>
+            <h2>🚫 Bloquear HWID</h2>
+            <input id="hwid" placeholder="HWID" />
+            <input id="motivo" placeholder="Motivo" />
+            <button onclick="bloquearHWID()">Bloquear HWID</button>
           </div>
         </div>
       </div>
@@ -301,26 +178,25 @@
       } else if (tipo === 'lifetime') {
         price.value = '149.90';
         maxAtivacoes.value = 1;
-      } else if (tipo === 'multi') {
+      } else {
         price.value = '39.90';
         maxAtivacoes.value = 3;
       }
     }
 
+    function apiHeaders(json = false) {
+      const headers = { 'x-admin-password': adminPassword };
+      if (json) headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+
     async function entrar() {
       const pwd = document.getElementById('adminPassword').value.trim();
-      document.getElementById('loginError').textContent = '';
-
-      if (!pwd) {
-        document.getElementById('loginError').textContent = 'Digite a senha.';
-        return;
-      }
-
+      if (!pwd) return;
       adminPassword = pwd;
 
-      const ok = await testarLogin();
-      if (!ok) {
-        adminPassword = '';
+      const res = await fetch('/api/dashboard-stats', { headers: apiHeaders() });
+      if (!res.ok) {
         document.getElementById('loginError').textContent = 'Senha inválida.';
         return;
       }
@@ -329,7 +205,7 @@
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('app').classList.remove('hidden');
       ajustarPlano();
-      carregarLicencas();
+      carregarTudo();
     }
 
     function logout() {
@@ -337,16 +213,65 @@
       location.reload();
     }
 
-    async function testarLogin() {
-      try {
-        const res = await fetch('/api/list-licenses', {
-          headers: {
-            'x-admin-password': adminPassword
-          }
-        });
-        return res.ok;
-      } catch {
-        return false;
+    async function carregarTudo() {
+      await Promise.all([carregarStats(), carregarLicencas()]);
+    }
+
+    async function carregarStats() {
+      const res = await fetch('/api/dashboard-stats', { headers: apiHeaders() });
+      const data = await res.json();
+      if (!res.ok) return;
+
+      document.getElementById('statTotal').textContent = data.totalLicenses;
+      document.getElementById('statActive').textContent = data.activeLicenses;
+      document.getElementById('statInactive').textContent = data.inactiveLicenses;
+      document.getElementById('statExpired').textContent = data.expiredLicenses;
+      document.getElementById('statSales').textContent =
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+          .format(data.monthlySales || 0);
+    }
+
+    async function carregarLicencas() {
+      const search = encodeURIComponent(document.getElementById('search').value || '');
+      const type = encodeURIComponent(document.getElementById('filterType').value || '');
+      const status = encodeURIComponent(document.getElementById('filterStatus').value || '');
+
+      const res = await fetch(`/api/list-licenses?search=${search}&type=${type}&status=${status}`, {
+        headers: apiHeaders()
+      });
+
+      const data = await res.json();
+      if (!res.ok) return;
+
+      const tbody = document.getElementById('licensesTable');
+      tbody.innerHTML = '';
+
+      for (const licenca of data.licenses) {
+        const tr = document.createElement('tr');
+        const expiracao = licenca.expires_at
+          ? new Date(licenca.expires_at).toLocaleDateString('pt-BR')
+          : 'Nunca';
+
+        tr.innerHTML = `
+          <td><code>${licenca.license_key}</code></td>
+          <td>${licenca.customer_name || '-'}</td>
+          <td><span class="badge ${licenca.key_type}">${licenca.key_type}</span></td>
+          <td>${licenca.current_activations || 0}/${licenca.max_activations}</td>
+          <td>${expiracao}</td>
+          <td class="${licenca.is_active ? 'active' : 'inactive'}">
+            ${licenca.is_active ? 'Ativa' : 'Inativa'}
+          </td>
+          <td>
+            <div class="actions">
+              <button onclick="toggleStatus('${licenca.id}', ${!licenca.is_active})">
+                ${licenca.is_active ? 'Desativar' : 'Ativar'}
+              </button>
+              <button class="secondary" onclick="resetActivations('${licenca.id}')">Resetar</button>
+              <button class="secondary" onclick="deleteLicense('${licenca.id}')">Excluir</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
       }
     }
 
@@ -363,15 +288,11 @@
 
       const res = await fetch('/api/generate-license', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': adminPassword
-        },
+        headers: apiHeaders(true),
         body: JSON.stringify(payload)
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         alert(data.error || 'Erro ao gerar licença');
         return;
@@ -380,104 +301,56 @@
       ultimaLicenca = data.license;
       document.getElementById('generatedKey').textContent = data.license.license_key;
       document.getElementById('resultado').style.display = 'block';
-
-      await carregarLicencas();
+      carregarTudo();
     }
 
-    async function carregarLicencas() {
-      const res = await fetch('/api/list-licenses', {
-        headers: {
-          'x-admin-password': adminPassword
-        }
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Erro ao carregar licenças');
-        return;
-      }
-
-      const tbody = document.getElementById('licensesTable');
-      tbody.innerHTML = '';
-
-      for (const licenca of data.licenses) {
-        const tr = document.createElement('tr');
-
-        const expiracao = licenca.expires_at
-          ? new Date(licenca.expires_at).toLocaleDateString('pt-BR')
-          : 'Nunca';
-
-        tr.innerHTML = `
-          <td><code>${licenca.license_key}</code></td>
-          <td>${licenca.customer_name || '-'}</td>
-          <td><span class="badge ${licenca.key_type}">${licenca.key_type}</span></td>
-          <td>${licenca.current_activations || 0}/${licenca.max_activations}</td>
-          <td>${expiracao}</td>
-          <td class="${licenca.is_active ? 'active' : 'inactive'}">
-            ${licenca.is_active ? '✅ Ativa' : '❌ Inativa'}
-          </td>
-          <td>
-            <button onclick="toggleStatus('${licenca.id}', ${!licenca.is_active})">
-              ${licenca.is_active ? 'Desativar' : 'Ativar'}
-            </button>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      }
-    }
-
-    async function toggleStatus(id, novoStatus) {
+    async function toggleStatus(id, is_active) {
       const res = await fetch('/api/toggle-license', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': adminPassword
-        },
-        body: JSON.stringify({
-          id,
-          is_active: novoStatus
-        })
+        headers: apiHeaders(true),
+        body: JSON.stringify({ id, is_active })
       });
-
       const data = await res.json();
+      if (!res.ok) return alert(data.error || 'Erro');
+      carregarTudo();
+    }
 
-      if (!res.ok) {
-        alert(data.error || 'Erro ao alterar status');
-        return;
-      }
+    async function resetActivations(id) {
+      const res = await fetch('/api/reset-activations', {
+        method: 'POST',
+        headers: apiHeaders(true),
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'Erro');
+      carregarTudo();
+    }
 
-      carregarLicencas();
+    async function deleteLicense(id) {
+      if (!confirm('Excluir esta licença?')) return;
+      const res = await fetch('/api/delete-license', {
+        method: 'POST',
+        headers: apiHeaders(true),
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'Erro');
+      carregarTudo();
     }
 
     async function bloquearHWID() {
       const hwid = document.getElementById('hwid').value.trim();
-      const motivo = document.getElementById('motivo').value.trim();
-
-      if (!hwid) {
-        alert('Digite o HWID.');
-        return;
-      }
+      const reason = document.getElementById('motivo').value.trim();
+      if (!hwid) return alert('Digite o HWID.');
 
       const res = await fetch('/api/block-hwid', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': adminPassword
-        },
-        body: JSON.stringify({
-          hwid,
-          reason: motivo
-        })
+        headers: apiHeaders(true),
+        body: JSON.stringify({ hwid, reason })
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || 'Erro ao bloquear HWID');
-        return;
-      }
+      if (!res.ok) return alert(data.error || 'Erro');
 
       alert('HWID bloqueado com sucesso.');
       document.getElementById('hwid').value = '';
@@ -487,21 +360,13 @@
     async function copiarLicenca() {
       if (!ultimaLicenca) return;
       await navigator.clipboard.writeText(ultimaLicenca.license_key);
-      alert('Licença copiada.');
+      alert('Key copiada.');
     }
 
     async function copiarMensagemCliente() {
       if (!ultimaLicenca) return;
-
       const nome = ultimaLicenca.customer_name || 'Cliente';
-      const msg =
-`${nome}, seu acesso foi liberado com sucesso.
-
-🔑 Licença:
-${ultimaLicenca.license_key}
-
-Guarde essa chave com cuidado.`;
-
+      const msg = `${nome}, sua licença foi gerada com sucesso.\n\n🔑 ${ultimaLicenca.license_key}\n\nGuarde essa chave com cuidado.`;
       await navigator.clipboard.writeText(msg);
       alert('Mensagem copiada.');
     }
@@ -509,18 +374,16 @@ Guarde essa chave com cuidado.`;
     window.addEventListener('load', async () => {
       const saved = sessionStorage.getItem('adminPassword');
       if (!saved) return;
-
       adminPassword = saved;
-      const ok = await testarLogin();
-
-      if (ok) {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        ajustarPlano();
-        carregarLicencas();
-      } else {
+      const res = await fetch('/api/dashboard-stats', { headers: apiHeaders() });
+      if (!res.ok) {
         sessionStorage.removeItem('adminPassword');
+        return;
       }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      ajustarPlano();
+      carregarTudo();
     });
   </script>
 </body>
