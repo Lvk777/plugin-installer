@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
       "source": "/",
@@ -8,30 +7,6 @@
     {
       "source": "/admin",
       "destination": "/admin.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/install-plugin.ps1",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/plain; charset=utf-8"
-        },
-        {
-          "key": "Content-Disposition",
-          "value": "inline; filename=\"install-plugin.ps1\""
-        }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store"
-        }
-      ]
     }
   ]
 }
