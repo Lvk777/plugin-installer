@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Licenças - Luatools</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; background: #1a1a1a; color: #fff; }
+        .card { background: #2d2d2d; border-radius: 10px; padding: 20px; margin: 20px 0; }
+        input, select, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
+        button { background: #5865F2; color: white; cursor: pointer; font-weight: bold; }
+        button:hover { background: #4752c4; }
+        .key { background: #00b894; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #444; }
+        .badge { padding: 3px 8px; border-radius: 3px; font-size: 12px; }
+        .unique { background: #0984e3; }
+        .lifetime { background: #00b894; }
+        .active { color: #00b894; }
+        .inactive { color: #d63031; }
+    </style>
+</head>
+<body>
+    <h1>🔑 Painel de Licenças - Luatools</h1>
+    
+    <!-- Card de geração -->
+    <div class="card">
+        <h2>➕ Gerar Nova Licença</h2>
+        <select id="tipo">
+            <option value="unique">Única (30 dias) - R$ 19,90</option>
+            <option value="lifetime">Vitalícia - R$ 149,90</option>
+            <option value="multi">Multi-PC (3 ativações) - R$ 39,90</option>
+        </select>
+        
+        <input type="number" id="maxAtivacoes" value="1" min="1" max="10" placeholder="Máx. ativações">
+        
+        <button onclick="gerarLicenca()">🎟️ Gerar Licença</button>
+        
+        <div id="resultado" style="margin-top: 20px;"></div>
+    </div>
+    
+    <!-- Card de blacklist -->
+    <div class="card">
+        <h2>🔴 Bloquear HWID</h2>
+        <input type="text" id="hwid" placeholder="HWID do usuário">
+        <input type="text" id="motivo" placeholder="Motivo do bloqueio">
+        <button onclick="bloquearHWID()">🚫 Bloquear</button>
+    </div>
+    
+    <!-- Tabela de licenças -->
+    <div class="card">
+        <h2>📋 Últimas Licenças</h2>
+        <table id="tabela">
+            <thead>
+                <tr>
+                    <th>Chave</th>
+                    <th>Tipo</th>
+                    <th>Ativações</th>
+                    <th>Expira</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+        const SUPABASE_KEY = 'SUA-CHAVE-ANON';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Função para gerar chave aleatória
+        function generateKey() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let key = 'LT-';
+            for (let i = 0; i < 12; i++) {
+                if (i % 4 === 0 && i > 0) key += '-';
+                key += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return key;
+        }
+        
+        // Gerar licença
+        async function gerarLicenca() {
+            const tipo = document.getElementById('tipo').value;
+            const maxAtivacoes = document.getElementById('maxAtivacoes').value;
+            const key = generateKey();
+            
+            let expiresAt = null;
+            if (tipo === 'unique') {
+                expiresAt = new Date(Date.now() + 30*24*60*60*1000);
+            } else if (tipo === 'multi') {
+                expiresAt = new Date(Date.now() + 30*24*60*60*1000);
+            }
+            
+            const { data, error } = await supabase
+                .from('licenses')
+                .insert({
+                    license_key: key,
+                    key_type: tipo,
+                    max_activations: parseInt(maxAtivacoes),
+                    expires_at: expiresAt,
+                    is_active: true
+                })
+                .select();
+            
+            if (!error) {
+                document.getElementById('resultado').innerHTML = `
+                    <div class="key">✅ Licença gerada: <strong>${key}</strong></div>
+                `;
+                carregarLicencas();
+            } else {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        // Bloquear HWID
+        async function bloquearHWID() {
+            const hwid = document.getElementById('hwid').value;
+            const motivo = document.getElementById('motivo').value;
+            
+            if (!hwid) {
+                alert('Digite o HWID!');
+                return;
+            }
+            
+            const { error } = await supabase
+                .from('blacklist')
+                .insert({
+                    hwid: hwid,
+                    reason: motivo || 'Bloqueado manualmente'
+                });
+            
+            if (!error) {
+                alert('✅ HWID bloqueado com sucesso!');
+                document.getElementById('hwid').value = '';
+                document.getElementById('motivo').value = '';
+            }
+        }
+        
+        // Carregar licenças
+        async function carregarLicencas() {
+            const { data } = await supabase
+                .from('licenses')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20);
+            
+            const tbody = document.querySelector('#tabela tbody');
+            tbody.innerHTML = '';
+            
+            data.forEach(licenca => {
+                const expiracao = licenca.expires_at ? 
+                    new Date(licenca.expires_at).toLocaleDateString('pt-BR') : 
+                    'Nunca';
+                
+                const row = `
+                    <tr>
+                        <td><code>${licenca.license_key}</code></td>
+                        <td><span class="badge ${licenca.key_type}">${licenca.key_type}</span></td>
+                        <td>${licenca.current_activations}/${licenca.max_activations}</td>
+                        <td>${expiracao}</td>
+                        <td class="${licenca.is_active ? 'active' : 'inactive'}">
+                            ${licenca.is_active ? '✅ Ativa' : '❌ Inativa'}
+                        </td>
+                        <td>
+                            <button onclick="toggleStatus('${licenca.id}', ${!licenca.is_active})">
+                                ${licenca.is_active ? 'Desativar' : 'Ativar'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // Ativar/desativar licença
+        async function toggleStatus(id, novoStatus) {
+            const { error } = await supabase
+                .from('licenses')
+                .update({ is_active: novoStatus })
+                .eq('id', id);
+            
+            if (!error) carregarLicencas();
+        }
+        
+        // Carregar ao iniciar
+        carregarLicencas();
+    </script>
+</body>
+</html>
