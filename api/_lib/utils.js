@@ -38,7 +38,7 @@ function getMaxActivations(tipo) {
 
 function buildBatContent({ domain }) {
   return `@echo off
-title Luatools Installer
+title Lvktool Installer
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm '${domain}/install-plugin.ps1' | iex"
 pause`;
 }
