@@ -1,6 +1,13 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "public": true,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/install-plugin.ps1"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
