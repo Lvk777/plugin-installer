@@ -93,7 +93,7 @@ function Test-License {
 }
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   LUATOOLS PLUGIN INSTALLER" -ForegroundColor Cyan
+Write-Host "   LVKTOOLS PLUGIN INSTALLER" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -127,7 +127,6 @@ if ($result.vpn_detected) {
 Write-Host ""
 Write-Host "Iniciando instalação..." -ForegroundColor Cyan
 
-# Seu código de instalação daqui para baixo
 $name = "luatools"
 $link = "https://github.com/madoiscool/ltsteamplugin/releases/latest/download/ltsteamplugin.zip"
 
