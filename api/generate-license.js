@@ -1,75 +1,68 @@
 const { requireAuth } = require('./_lib/auth');
 const { getSupabase } = require('./_lib/supabase');
-const { generateKey, getLicenseDefaults, logAction } = require('./_lib/utils');
+const {
+  generateKey,
+  computeExpiresAt,
+  getMaxActivations,
+  buildBatContent,
+  logAction
+} = require('./_lib/utils');
 
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
-  }
-
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
   if (!requireAuth(req, res)) return;
 
   try {
     const {
       tipo,
-      maxAtivacoes,
+      durationValue,
+      durationUnit,
       customerName,
       customerContact,
       paymentMethod,
       price,
-      notes
+      notes,
+      hwidChangeLimit
     } = req.body || {};
 
-    const { expiresAt, max } = getLicenseDefaults(tipo, maxAtivacoes);
     const licenseKey = generateKey();
+    const expiresAt = computeExpiresAt(durationValue, durationUnit);
+    const maxActivations = getMaxActivations(tipo);
     const supabase = getSupabase();
 
     const { data, error } = await supabase
       .from('licenses')
       .insert({
         license_key: licenseKey,
-        key_type: tipo,
+        key_type: tipo || 'unique',
         customer_name: customerName || null,
         customer_contact: customerContact || null,
-        payment_method: paymentMethod || 'PIX',
+        payment_method: paymentMethod || 'manual',
         price: price ? Number(price) : null,
-        max_activations: max,
-        current_activations: 0,
+        notes: notes || null,
+        max_activations: maxActivations,
         expires_at: expiresAt,
         is_active: true,
-        notes: notes || null
+        hwid_change_limit: Number(hwidChangeLimit || 2),
+        duration_value: durationValue ? Number(durationValue) : null,
+        duration_unit: durationUnit || null
       })
       .select()
       .single();
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) return res.status(500).json({ error: error.message });
 
-    if (process.env.DISCORD_WEBHOOK_URL) {
-      await fetch(process.env.DISCORD_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content:
-            `🔑 **Nova licença gerada**\n` +
-            `**Cliente:** ${customerName || 'Não informado'}\n` +
-            `**Contato:** ${customerContact || 'Não informado'}\n` +
-            `**Plano:** ${tipo}\n` +
-            `**Preço:** ${price ? `R$ ${Number(price).toFixed(2)}` : 'Não informado'}\n` +
-            `**Pagamento:** ${paymentMethod || 'PIX'}\n` +
-            `**Key:** \`${licenseKey}\``
-        })
-      }).catch(() => {});
-    }
+    const domain = process.env.PUBLIC_SITE_URL || 'https://plugin-installer.vercel.app';
+    const batContent = buildBatContent({ domain, licenseKey });
 
-    await logAction('generate_license', {
-      license_key: licenseKey,
-      key_type: tipo,
-      customer_name: customerName || null
+    await logAction('generate_license', { license_key: licenseKey, customer_name: customerName || null });
+
+    return res.status(200).json({
+      success: true,
+      license: data,
+      batContent,
+      batFileName: `luatools-${licenseKey}.bat`
     });
-
-    return res.status(200).json({ success: true, license: data });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Erro interno' });
   }
