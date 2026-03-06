@@ -6,14 +6,11 @@ module.exports = async (req, res) => {
   if (!requireAuth(req, res)) return;
 
   try {
-    const { licenseKey } = req.body || {};
-    if (!licenseKey) return res.status(400).json({ error: 'licenseKey obrigatório' });
-
     const domain = process.env.PUBLIC_SITE_URL || 'https://plugin-installer.vercel.app';
-    const content = buildBatContent({ domain, licenseKey });
+    const content = buildBatContent({ domain });
 
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="luatools-${licenseKey}.bat"`);
+    res.setHeader('Content-Disposition', 'attachment; filename="luatools-installer.bat"');
     return res.status(200).send(content);
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Erro interno' });
