@@ -1389,35 +1389,31 @@ let currentClientData = {};
 function doLogin() {
   const pass = document.getElementById('passwordInput').value.trim();
   if (!pass) return;
+
   const btn = document.getElementById('loginBtn');
   btn.innerHTML = '<span class="spinner"></span> Verificando...';
   btn.disabled = true;
 
-  // Verifica contra a API
   fetch('/api/admin?action=dashboard-stats', {
     headers: { 'x-admin-password': pass }
-  }).then(r => {
-    if (r.ok || r.status === 200) {
-      adminPassword = pass;
-      sessionStorage.setItem('lua_admin_pass', pass);
-      document.getElementById('loginError').style.display = 'none';
-      showApp();
-    } else {
+  })
+    .then(async (r) => {
+      if (r.ok) {
+        adminPassword = pass;
+        sessionStorage.setItem('lua_admin_pass', pass);
+        document.getElementById('loginError').style.display = 'none';
+        showApp();
+      } else {
+        showLoginError();
+      }
+    })
+    .catch(() => {
       showLoginError();
-    }
-  }).catch(() => {
-    // Se API offline, permite login com senha padrão local
-    if (pass === 'admin' || pass.length >= 4) {
-      adminPassword = pass;
-      sessionStorage.setItem('lua_admin_pass', pass);
-      showApp();
-    } else {
-      showLoginError();
-    }
-  }).finally(() => {
-    btn.innerHTML = '<span>Entrar no Painel</span>';
-    btn.disabled = false;
-  });
+    })
+    .finally(() => {
+      btn.innerHTML = '<span>Entrar no Painel</span>';
+      btn.disabled = false;
+    });
 }
 
 function showLoginError() {
@@ -1441,7 +1437,9 @@ function doLogout() {
 // ════════════════════════════════════
 //  API HELPER
 // ════════════════════════════════════
-async function api(path, method = 'GET', body = null) {
+async function api(action, method = 'GET', body = null, query = '') {
+  const url = `/api/admin?action=${encodeURIComponent(action)}${query ? '&' + query : ''}`;
+
   const opts = {
     method,
     headers: {
@@ -1449,9 +1447,20 @@ async function api(path, method = 'GET', body = null) {
       'Content-Type': 'application/json'
     }
   };
+
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(path, opts);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+
+  const r = await fetch(url, opts);
+
+  if (!r.ok) {
+    let msg = `HTTP ${r.status}`;
+    try {
+      const err = await r.json();
+      if (err?.error) msg = err.error;
+    } catch {}
+    throw new Error(msg);
+  }
+
   return r.json();
 }
 
@@ -1488,7 +1497,7 @@ function refreshCurrent() {
 // ════════════════════════════════════
 async function loadDashboard() {
   try {
-    const data = await api('/api/admin?action=dashboard-stats');
+    const data = await api('dashboard-stats');
     document.getElementById('m-total').textContent = data.total ?? 0;
     document.getElementById('m-active').textContent = data.active ?? 0;
     document.getElementById('m-inactive').textContent = data.inactive ?? 0;
@@ -1554,7 +1563,7 @@ async function generateLicense() {
   const payload = { name, contact, email, type, payment, price, durationVal, durationUnit, hwidLimit, notes };
 
   try {
-    const data = await api('/api/admin?action=generate-license', 'POST', payload);
+    const data = await api('generate-license', 'POST', payload);
     currentLicenseKey = data.key || generateLocalKey();
     currentClientData = { name, contact, email, type, price, durationVal, durationUnit };
     showLicenseOutput(currentLicenseKey);
@@ -1634,7 +1643,7 @@ pause`;
 async function generateInstallToken() {
   if (!currentLicenseKey) return;
   try {
-    const data = await api('/api/admin?action=generate-install-token', 'POST', { key: currentLicenseKey });
+    const data = await api('generate-install-token', 'POST', { key: currentLicenseKey });
     document.getElementById('tokenDisplay').textContent = '🔐 Token: ' + (data.token || 'TOKEN_' + Math.random().toString(36).substr(2,16).toUpperCase());
     document.getElementById('tokenDisplay').style.display = 'block';
     toast('Token gerado!', 'success');
@@ -1662,7 +1671,7 @@ function clearGenerateForm() {
 // ════════════════════════════════════
 async function loadLicenses() {
   try {
-    const data = await api('/api/admin?action=list-licenses');
+    const data = await api('list-licenses');
     allLicenses = data.licenses || data || [];
     renderLicenses(allLicenses);
   } catch {
@@ -1676,6 +1685,7 @@ function getMockLicenses() {
   const types = ['unique','multi','lifetime'];
   const names = ['João Silva','Maria Costa','Pedro Santos','Ana Oliveira','Lucas Lima','Carla Mendes'];
   return Array.from({length:12}, (_, i) => ({
+    id: `id-${i+1}`,
     key: generateLocalKey(),
     client: names[i % names.length],
     type: types[i % 3],
@@ -1710,9 +1720,10 @@ function renderLicenses(licenses) {
     const status = lic.status || 'ativo';
     const vpnBadge = lic.vpn ? '<span class="badge badge-danger">VPN</span>' : '<span class="badge badge-neutral">—</span>';
     const key = lic.key || '—';
+    const id = lic.id || key;
     const keyShort = key.length > 24 ? key.substring(0, 20) + '...' : key;
 
-    return `<tr id="row-${key}">
+    return `<tr id="row-${id}">
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="key-cell" title="${key}">${keyShort}</span>
@@ -1729,10 +1740,10 @@ function renderLicenses(licenses) {
       <td>
         <div class="actions-cell">
           <button class="btn btn-icon" onclick="viewActivations('${key}')" title="Ver ativações">👁</button>
-          <button class="btn btn-icon" onclick="toggleLicense('${key}', '${status}')" title="${status === 'ativo' ? 'Desativar' : 'Ativar'}">${status === 'ativo' ? '⛔' : '✅'}</button>
-          <button class="btn btn-icon" onclick="resetActivations('${key}')" title="Resetar ativações">🔄</button>
-          <button class="btn btn-icon" onclick="resetHwidChanges('${key}')" title="Resetar trocas HWID">🔑</button>
-          <button class="btn btn-icon" style="color:var(--red-danger);" onclick="deleteLicense('${key}')" title="Excluir">🗑</button>
+          <button class="btn btn-icon" onclick="toggleLicense('${id}', '${status}')" title="${status === 'ativo' ? 'Desativar' : 'Ativar'}">${status === 'ativo' ? '⛔' : '✅'}</button>
+          <button class="btn btn-icon" onclick="resetActivations('${id}')" title="Resetar ativações">🔄</button>
+          <button class="btn btn-icon" onclick="resetHwidChanges('${id}')" title="Resetar trocas HWID">🔑</button>
+          <button class="btn btn-icon" style="color:var(--red-danger);" onclick="deleteLicense('${id}')" title="Excluir">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -1759,7 +1770,7 @@ function filterTable() {
 // ════════════════════════════════════
 async function toggleLicense(key, currentStatus) {
   try {
-    await api('/api/admin?action=toggle-license', 'POST', { key, status: currentStatus });
+    await api('toggle-license', 'POST', { id: key, is_active: currentStatus !== 'ativo' });
     toast('Status da licença atualizado!', 'success');
     loadLicenses();
   } catch {
@@ -1770,7 +1781,7 @@ async function toggleLicense(key, currentStatus) {
 async function resetActivations(key) {
   if (!confirm('Resetar ativações desta licença?')) return;
   try {
-    await api('/api/admin?action=reset-activations', 'POST', { key });
+    await api('reset-activations', 'POST', { id: key });
     toast('Ativações resetadas!', 'success');
     loadLicenses();
   } catch {
@@ -1781,7 +1792,7 @@ async function resetActivations(key) {
 async function resetHwidChanges(key) {
   if (!confirm('Resetar trocas de HWID desta licença?')) return;
   try {
-    await api('/api/admin?action=reset-hwid-changes', 'POST', { key });
+    await api('reset-hwid-changes', 'POST', { id: key });
     toast('Trocas de HWID resetadas!', 'success');
     loadLicenses();
   } catch {
@@ -1792,7 +1803,7 @@ async function resetHwidChanges(key) {
 async function deleteLicense(key) {
   if (!confirm('Excluir esta licença permanentemente?')) return;
   try {
-    await api('/api/admin?action=delete-license', 'POST', { key });
+    await api('delete-license', 'POST', { id: key });
     toast('Licença excluída!', 'success');
     loadLicenses();
   } catch {
@@ -1810,7 +1821,7 @@ async function viewActivations(key) {
   openModal('activationsModal');
 
   try {
-    const data = await api(`/api/admin?action=license-activations&key=${encodeURIComponent(key)}`);
+    const data = await api('license-activations', 'GET', null, `key=${encodeURIComponent(key)}`);
     renderActivations(data.activations || data || []);
   } catch {
     renderActivations(getMockActivations());
@@ -1881,7 +1892,7 @@ async function blockHwid() {
   if (!hwid) { toast('Informe o HWID', 'error'); return; }
 
   try {
-    await api('/api/admin?action=block-hwid', 'POST', { hwid, reason });
+    await api('block-hwid', 'POST', { hwid, reason });
     toast('HWID bloqueado com sucesso!', 'success');
   } catch {
     toast('HWID registrado (API offline)', 'info');
@@ -1895,7 +1906,7 @@ async function blockHwid() {
 
 async function loadBlockedHwids() {
   try {
-    const data = await api('/api/admin?action=block-hwid&list=true');
+    const data = await api('block-hwid', 'GET', null, 'list=true');
     blockedHwids = data.blocked || data || [];
     renderBlockedHwids();
   } catch {
@@ -1922,7 +1933,7 @@ function renderBlockedHwids() {
 
 async function unblockHwid(i) {
   const item = blockedHwids[i];
-  try { await api('/api/admin?action=block-hwid', 'DELETE', { hwid: item.hwid }); } catch {}
+  try { await api('block-hwid', 'DELETE', { hwid: item.hwid }); } catch {}
   blockedHwids.splice(i, 1);
   renderBlockedHwids();
   toast('HWID desbloqueado', 'success');
