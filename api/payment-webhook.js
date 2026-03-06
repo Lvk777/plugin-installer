@@ -1,92 +1,65 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-function generateKey() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let key = 'LT-';
-
-  for (let i = 0; i < 16; i++) {
-    if (i > 0 && i % 4 === 0) key += '-';
-    key += chars[Math.floor(Math.random() * chars.length)];
-  }
-
-  return key;
-}
+const { getSupabase } = require('./_lib/supabase');
+const { generateKey, computeExpiresAt, getMaxActivations } = require('./_lib/utils');
 
 module.exports = async (req, res) => {
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
 
   try {
+    const body = req.body || {};
+    const provider = body.provider || 'manual';
+    const status = body.status || null;
 
-    const body = req.body;
+    const supabase = getSupabase();
 
-    const status = body.status;
-    const customer = body.customer_name || null;
-    const contact = body.customer_contact || null;
-    const price = body.price || null;
-    const tipo = body.plan || 'unique';
+    await supabase.from('payment_events').insert({
+      provider,
+      external_id: body.external_id || body.id || null,
+      status,
+      payload: body
+    });
 
-    if (status !== 'paid') {
-      return res.status(200).json({ success: true });
+    if (provider === 'manual') {
+      return res.status(200).json({ success: true, message: 'Evento manual registrado.' });
     }
+
+    if (provider === 'mercadopago' && status !== 'approved') {
+      return res.status(200).json({ success: true, message: 'Pagamento ainda não aprovado.' });
+    }
+
+    const tipo = body.plan || 'unique';
+    const durationValue = body.durationValue || 30;
+    const durationUnit = body.durationUnit || 'day';
 
     const licenseKey = generateKey();
-
-    let expiresAt = null;
-    let maxActivations = 1;
-
-    if (tipo === 'unique') {
-      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      maxActivations = 1;
-    }
-
-    if (tipo === 'multi') {
-      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      maxActivations = 3;
-    }
-
-    if (tipo === 'lifetime') {
-      expiresAt = null;
-      maxActivations = 1;
-    }
+    const expiresAt = computeExpiresAt(durationValue, durationUnit);
+    const maxActivations = getMaxActivations(tipo);
 
     const { data, error } = await supabase
       .from('licenses')
       .insert({
         license_key: licenseKey,
         key_type: tipo,
+        customer_name: body.customer_name || null,
+        customer_contact: body.customer_contact || null,
+        payment_method: provider,
+        price: body.price ? Number(body.price) : null,
         max_activations: maxActivations,
         expires_at: expiresAt,
         is_active: true,
-        customer_name: customer,
-        customer_contact: contact,
-        price: price,
-        payment_method: 'PIX'
+        duration_value: Number(durationValue),
+        duration_unit: durationUnit,
+        hwid_change_limit: Number(body.hwidChangeLimit || 2)
       })
       .select()
       .single();
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) return res.status(500).json({ error: error.message });
 
     return res.status(200).json({
       success: true,
-      license_key: licenseKey
+      license: data
     });
-
   } catch (err) {
-
-    return res.status(500).json({
-      error: err.message
-    });
-
+    return res.status(500).json({ error: err.message || 'Erro interno' });
   }
 };
