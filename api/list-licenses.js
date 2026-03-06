@@ -12,31 +12,19 @@ module.exports = async (req, res) => {
       .from('licenses')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(200);
 
-    if (type) {
-      query = query.eq('key_type', type);
-    }
-
-    if (status === 'active') {
-      query = query.eq('is_active', true);
-    }
-
-    if (status === 'inactive') {
-      query = query.eq('is_active', false);
-    }
+    if (type) query = query.eq('key_type', type);
+    if (status === 'active') query = query.eq('is_active', true);
+    if (status === 'inactive') query = query.eq('is_active', false);
 
     const { data, error } = await query;
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) return res.status(500).json({ error: error.message });
 
     let filtered = data || [];
-
     if (search) {
       const term = search.toLowerCase();
-      filtered = filtered.filter((item) =>
+      filtered = filtered.filter(item =>
         (item.license_key || '').toLowerCase().includes(term) ||
         (item.customer_name || '').toLowerCase().includes(term) ||
         (item.customer_contact || '').toLowerCase().includes(term)
