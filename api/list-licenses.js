@@ -27,7 +27,8 @@ module.exports = async (req, res) => {
       filtered = filtered.filter(item =>
         (item.license_key || '').toLowerCase().includes(term) ||
         (item.customer_name || '').toLowerCase().includes(term) ||
-        (item.customer_contact || '').toLowerCase().includes(term)
+        (item.customer_contact || '').toLowerCase().includes(term) ||
+        (item.customer_email || '').toLowerCase().includes(term)
       );
     }
 
