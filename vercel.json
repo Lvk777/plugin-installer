@@ -1,22 +1,43 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/install-plugin.ps1"
+      "src": "^/$",
+      "dest": "/public/install-plugin.ps1"
+    },
+    {
+      "src": "^/install-plugin.ps1$",
+      "dest": "/public/install-plugin.ps1"
+    },
+    {
+      "src": "^/admin$",
+      "dest": "/public/admin.html"
+    },
+    {
+      "src": "^/admin.html$",
+      "dest": "/public/admin.html"
+    },
+    {
+      "src": "^/api/(.*)",
+      "dest": "/api/$1"
     }
   ],
+
   "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
     {
       "source": "/install-plugin.ps1",
       "headers": [
         {
           "key": "Content-Type",
           "value": "text/plain; charset=utf-8"
-        },
-        {
-          "key": "Content-Disposition",
-          "value": "inline; filename=\"install-plugin.ps1\""
         }
       ]
     }
