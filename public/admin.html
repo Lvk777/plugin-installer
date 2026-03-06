@@ -1,11 +1,9 @@
-<h1>PAINEL NOVO TESTE 123</h1>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lvk System — Painel Administrativo</title>
+<title>Luatools — Painel Administrativo</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 
@@ -1020,7 +1018,7 @@
     <div class="login-logo">
       <div class="login-logo-icon">⚡</div>
       <div>
-        <div class="login-logo-text">Lvk System</div>
+        <div class="login-logo-text">Luatools</div>
       </div>
     </div>
     <div class="login-title">Painel Admin</div>
@@ -1050,7 +1048,7 @@
     <div class="sidebar-header">
       <div class="logo-icon">⚡</div>
       <div>
-        <div class="logo-text">Lvk System</div>
+        <div class="logo-text">Luatools</div>
         <div class="logo-badge">Admin v2.0</div>
       </div>
     </div>
@@ -1396,7 +1394,7 @@ function doLogin() {
   btn.disabled = true;
 
   // Verifica contra a API
-  fetch('/api/dashboard-stats', {
+  fetch('/api/admin?action=dashboard-stats', {
     headers: { 'x-admin-password': pass }
   }).then(r => {
     if (r.ok || r.status === 200) {
@@ -1490,7 +1488,7 @@ function refreshCurrent() {
 // ════════════════════════════════════
 async function loadDashboard() {
   try {
-    const data = await api('/api/dashboard-stats');
+    const data = await api('/api/admin?action=dashboard-stats');
     document.getElementById('m-total').textContent = data.total ?? 0;
     document.getElementById('m-active').textContent = data.active ?? 0;
     document.getElementById('m-inactive').textContent = data.inactive ?? 0;
@@ -1556,7 +1554,7 @@ async function generateLicense() {
   const payload = { name, contact, email, type, payment, price, durationVal, durationUnit, hwidLimit, notes };
 
   try {
-    const data = await api('/api/generate-license', 'POST', payload);
+    const data = await api('/api/admin?action=generate-license', 'POST', payload);
     currentLicenseKey = data.key || generateLocalKey();
     currentClientData = { name, contact, email, type, price, durationVal, durationUnit };
     showLicenseOutput(currentLicenseKey);
@@ -1591,7 +1589,7 @@ function copyClientMessage() {
   const unitMap = { minute: 'minuto(s)', hour: 'hora(s)', day: 'dia(s)', lifetime: 'vitalícia' };
   const dur = d.durationUnit === 'lifetime' ? 'vitalícia' : `${d.durationVal} ${unitMap[d.durationUnit] || d.durationUnit}`;
   const msg =
-`🔑 *Sua Licença LvkTool*
+`🔑 *Sua Licença Luatools*
 
 Olá, ${d.name}!
 
@@ -1607,16 +1605,16 @@ Aqui está sua chave de acesso:
 Para ativar, use o instalador oficial e insira a key acima.
 Em caso de dúvidas, entre em contato pelo suporte.
 
-_LvkSystem — Acesso garantido_ ⚡`;
+_Luatools — Acesso garantido_ ⚡`;
   copyText(msg, 'Mensagem copiada!');
 }
 
 function downloadBat() {
   const key = currentLicenseKey;
   const content = `@echo off
-title LvkTool Installer
+title Luatools Installer
 echo ========================================
-echo   LvkSystem - Instalacao de Licenca
+echo   Luatools - Instalacao de Licenca
 echo ========================================
 echo.
 echo Chave: ${key}
@@ -1636,7 +1634,7 @@ pause`;
 async function generateInstallToken() {
   if (!currentLicenseKey) return;
   try {
-    const data = await api('/api/generate-install-token', 'POST', { key: currentLicenseKey });
+    const data = await api('/api/admin?action=generate-install-token', 'POST', { key: currentLicenseKey });
     document.getElementById('tokenDisplay').textContent = '🔐 Token: ' + (data.token || 'TOKEN_' + Math.random().toString(36).substr(2,16).toUpperCase());
     document.getElementById('tokenDisplay').style.display = 'block';
     toast('Token gerado!', 'success');
@@ -1664,7 +1662,7 @@ function clearGenerateForm() {
 // ════════════════════════════════════
 async function loadLicenses() {
   try {
-    const data = await api('/api/list-licenses');
+    const data = await api('/api/admin?action=list-licenses');
     allLicenses = data.licenses || data || [];
     renderLicenses(allLicenses);
   } catch {
@@ -1761,7 +1759,7 @@ function filterTable() {
 // ════════════════════════════════════
 async function toggleLicense(key, currentStatus) {
   try {
-    await api('/api/toggle-license', 'POST', { key, status: currentStatus });
+    await api('/api/admin?action=toggle-license', 'POST', { key, status: currentStatus });
     toast('Status da licença atualizado!', 'success');
     loadLicenses();
   } catch {
@@ -1772,7 +1770,7 @@ async function toggleLicense(key, currentStatus) {
 async function resetActivations(key) {
   if (!confirm('Resetar ativações desta licença?')) return;
   try {
-    await api('/api/reset-activations', 'POST', { key });
+    await api('/api/admin?action=reset-activations', 'POST', { key });
     toast('Ativações resetadas!', 'success');
     loadLicenses();
   } catch {
@@ -1783,7 +1781,7 @@ async function resetActivations(key) {
 async function resetHwidChanges(key) {
   if (!confirm('Resetar trocas de HWID desta licença?')) return;
   try {
-    await api('/api/reset-hwid-changes', 'POST', { key });
+    await api('/api/admin?action=reset-hwid-changes', 'POST', { key });
     toast('Trocas de HWID resetadas!', 'success');
     loadLicenses();
   } catch {
@@ -1794,7 +1792,7 @@ async function resetHwidChanges(key) {
 async function deleteLicense(key) {
   if (!confirm('Excluir esta licença permanentemente?')) return;
   try {
-    await api('/api/delete-license', 'POST', { key });
+    await api('/api/admin?action=delete-license', 'POST', { key });
     toast('Licença excluída!', 'success');
     loadLicenses();
   } catch {
@@ -1812,7 +1810,7 @@ async function viewActivations(key) {
   openModal('activationsModal');
 
   try {
-    const data = await api(`/api/license-activations?key=${encodeURIComponent(key)}`);
+    const data = await api(`/api/admin?action=license-activations&key=${encodeURIComponent(key)}`);
     renderActivations(data.activations || data || []);
   } catch {
     renderActivations(getMockActivations());
@@ -1883,7 +1881,7 @@ async function blockHwid() {
   if (!hwid) { toast('Informe o HWID', 'error'); return; }
 
   try {
-    await api('/api/block-hwid', 'POST', { hwid, reason });
+    await api('/api/admin?action=block-hwid', 'POST', { hwid, reason });
     toast('HWID bloqueado com sucesso!', 'success');
   } catch {
     toast('HWID registrado (API offline)', 'info');
@@ -1897,7 +1895,7 @@ async function blockHwid() {
 
 async function loadBlockedHwids() {
   try {
-    const data = await api('/api/block-hwid?list=true');
+    const data = await api('/api/admin?action=block-hwid&list=true');
     blockedHwids = data.blocked || data || [];
     renderBlockedHwids();
   } catch {
@@ -1924,7 +1922,7 @@ function renderBlockedHwids() {
 
 async function unblockHwid(i) {
   const item = blockedHwids[i];
-  try { await api('/api/block-hwid', 'DELETE', { hwid: item.hwid }); } catch {}
+  try { await api('/api/admin?action=block-hwid', 'DELETE', { hwid: item.hwid }); } catch {}
   blockedHwids.splice(i, 1);
   renderBlockedHwids();
   toast('HWID desbloqueado', 'success');
