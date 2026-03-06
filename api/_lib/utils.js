@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { getSupabase } = require('./supabase');
 
 function generateKey() {
@@ -10,24 +11,36 @@ function generateKey() {
   return key;
 }
 
-function getLicenseDefaults(tipo, maxAtivacoes) {
-  let expiresAt = null;
-  let max = Number(maxAtivacoes) || 1;
+function generateToken() {
+  return crypto.randomBytes(24).toString('hex');
+}
 
-  if (tipo === 'unique') {
-    expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    max = 1;
-  } else if (tipo === 'multi') {
-    expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    max = Number(maxAtivacoes) || 3;
-  } else if (tipo === 'lifetime') {
-    expiresAt = null;
-    max = Number(maxAtivacoes) || 1;
-  } else {
-    throw new Error('Tipo de licença inválido');
-  }
+function computeExpiresAt(durationValue, durationUnit) {
+  if (!durationValue || !durationUnit || durationUnit === 'lifetime') return null;
 
-  return { expiresAt, max };
+  const now = Date.now();
+  const value = Number(durationValue);
+
+  const map = {
+    minute: 60 * 1000,
+    hour: 60 * 60 * 1000,
+    day: 24 * 60 * 60 * 1000
+  };
+
+  if (!map[durationUnit]) return null;
+  return new Date(now + value * map[durationUnit]).toISOString();
+}
+
+function getMaxActivations(tipo) {
+  if (tipo === 'multi') return 3;
+  return 1;
+}
+
+function buildBatContent({ domain, licenseKey }) {
+  return `@echo off
+title Luatools Installer
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm '${domain}/install-plugin.ps1'))) -LicenseKey '${licenseKey}'"
+exit`;
 }
 
 async function logAction(action, details = {}) {
@@ -37,4 +50,11 @@ async function logAction(action, details = {}) {
   } catch (_) {}
 }
 
-module.exports = { generateKey, getLicenseDefaults, logAction };
+module.exports = {
+  generateKey,
+  generateToken,
+  computeExpiresAt,
+  getMaxActivations,
+  buildBatContent,
+  logAction
+};
