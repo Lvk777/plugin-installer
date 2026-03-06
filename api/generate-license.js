@@ -19,6 +19,7 @@ module.exports = async (req, res) => {
       durationUnit,
       customerName,
       customerContact,
+      customerEmail,
       paymentMethod,
       price,
       notes,
@@ -37,6 +38,7 @@ module.exports = async (req, res) => {
         key_type: tipo || 'unique',
         customer_name: customerName || null,
         customer_contact: customerContact || null,
+        customer_email: customerEmail || null,
         payment_method: paymentMethod || 'manual',
         price: price ? Number(price) : null,
         notes: notes || null,
@@ -53,15 +55,18 @@ module.exports = async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
 
     const domain = process.env.PUBLIC_SITE_URL || 'https://plugin-installer.vercel.app';
-    const batContent = buildBatContent({ domain, licenseKey });
+    const batContent = buildBatContent({ domain });
 
-    await logAction('generate_license', { license_key: licenseKey, customer_name: customerName || null });
+    await logAction('generate_license', {
+      license_key: licenseKey,
+      customer_name: customerName || null
+    });
 
     return res.status(200).json({
       success: true,
       license: data,
       batContent,
-      batFileName: `luatools-${licenseKey}.bat`
+      batFileName: 'luatools-installer.bat'
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Erro interno' });
