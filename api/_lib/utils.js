@@ -33,10 +33,7 @@ function getLicenseDefaults(tipo, maxAtivacoes) {
 async function logAction(action, details = {}) {
   try {
     const supabase = getSupabase();
-    await supabase.from('admin_logs').insert({
-      action,
-      details
-    });
+    await supabase.from('admin_logs').insert({ action, details });
   } catch (_) {}
 }
 
