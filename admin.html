@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <title>Painel de Licenças - Luatools</title>
     <style>
+        <script>
+    // Proteção simples por senha
+    const senha = prompt("🔐 Digite a senha de administrador:");
+    if (senha !== "Luatools2025") {
+        document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>⛔ ACESSO NEGADO</h1>";
+        throw new Error("Acesso negado");
+    }
+</script>
         body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; background: #1a1a1a; color: #fff; }
         .card { background: #2d2d2d; border-radius: 10px; padding: 20px; margin: 20px 0; }
         input, select, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
