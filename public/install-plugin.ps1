@@ -13,7 +13,6 @@ function Get-HWID {
 
 function Get-Fingerprint {
     $parts = @()
-
     try { $parts += (Get-CimInstance Win32_ComputerSystemProduct).UUID } catch {}
     try { $parts += (Get-CimInstance Win32_BIOS).SerialNumber } catch {}
     try { $parts += (Get-CimInstance Win32_BaseBoard).SerialNumber } catch {}
@@ -29,9 +28,20 @@ function Get-Fingerprint {
     return ([BitConverter]::ToString($hash) -replace '-', '').ToLower()
 }
 
+function Test-IsVM {
+    try {
+        $cs = Get-CimInstance Win32_ComputerSystem
+        $bios = Get-CimInstance Win32_BIOS
+        $text = "$($cs.Manufacturer) $($cs.Model) $($bios.Manufacturer) $($bios.SerialNumber)"
+
+        if ($text -match "VMware|VirtualBox|KVM|QEMU|Xen|Hyper-V") {
+            return $true
+        }
+    } catch {}
+    return $false
+}
+
 function Get-SystemInfo {
-    $hwid = Get-HWID
-    $fingerprint = Get-Fingerprint
     $ip = $null
     $os = $null
 
@@ -39,12 +49,13 @@ function Get-SystemInfo {
     try { $os = (Get-CimInstance Win32_OperatingSystem).Caption } catch { $os = "Windows" }
 
     return @{
-        hwid = $hwid
-        fingerprint = $fingerprint
+        hwid = Get-HWID
+        fingerprint = Get-Fingerprint
         computer_name = $env:COMPUTERNAME
         username = $env:USERNAME
         ip_address = $ip
         os_version = $os
+        is_vm = (Test-IsVM)
     }
 }
 
@@ -59,6 +70,7 @@ function Test-License {
         ip_address = $SystemInfo.ip_address
         username = $SystemInfo.username
         os_version = $SystemInfo.os_version
+        is_vm = $SystemInfo.is_vm
     } | ConvertTo-Json -Depth 10
 
     try {
@@ -80,51 +92,57 @@ function Test-License {
     }
 }
 
-$Host.UI.RawUI.WindowTitle = "Luatools Installer - Verificando Licença"
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "   LUATOOLS PLUGIN INSTALLER" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not $LicenseKey) {
-    $LicenseKey = Read-Host "🔑 Digite sua chave de licença"
+    $LicenseKey = Read-Host "Digite sua chave de licença"
     if (-not $LicenseKey) {
-        Write-Host "❌ Chave não fornecida!" -ForegroundColor Red
+        Write-Host "Chave não fornecida" -ForegroundColor Red
         pause
         exit 1
     }
 }
 
-Write-Host "📡 Coletando informações do sistema..." -ForegroundColor Yellow
+Write-Host "Coletando informações do sistema..." -ForegroundColor Yellow
 $systemInfo = Get-SystemInfo
 
-Write-Host "🔍 Verificando licença..." -ForegroundColor Yellow
+Write-Host "Verificando licença..." -ForegroundColor Yellow
 $result = Test-License -Key $LicenseKey -SystemInfo $systemInfo
 
 if (-not $result.valid) {
-    $reason = switch($result.reason) {
-        "INVALID" { "Chave inválida" }
-        "EXPIRED" { "Licença expirada" }
-        "MAX_ACTIVATIONS" { "Limite de ativações atingido" }
-        "HWID_CHANGE_LIMIT" { "Limite de trocas de hardware atingido" }
-        "BLOCKED" { "Hardware bloqueado" }
-        "CONNECTION_FAILED" { "Falha na conexão" }
-        default { "Erro desconhecido" }
-    }
-
-    Write-Host "❌ LICENÇA INVÁLIDA: $reason" -ForegroundColor Red
-    if ($result.message) { Write-Host "ℹ️ $($result.message)" -ForegroundColor Yellow }
+    Write-Host "Licença inválida: $($result.reason)" -ForegroundColor Red
+    if ($result.message) { Write-Host $result.message -ForegroundColor Yellow }
     pause
     exit 1
 }
 
-Write-Host "✅ LICENÇA VÁLIDA! ($($result.license_type))" -ForegroundColor Green
+Write-Host "Licença válida! ($($result.license_type))" -ForegroundColor Green
 if ($result.vpn_detected) {
-    Write-Host "⚠️ VPN/Proxy detectado: $($result.country)" -ForegroundColor Yellow
+    Write-Host "VPN/Proxy detectado: $($result.country)" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "🚀 Iniciando instalação do plugin..." -ForegroundColor Cyan
-Write-Host ""
+Write-Host "Iniciando instalação..." -ForegroundColor Cyan
 
-# ... seu código de instalação aqui ...
+# Seu código de instalação daqui para baixo
+$name = "luatools"
+$link = "https://github.com/madoiscool/ltsteamplugin/releases/latest/download/ltsteamplugin.zip"
+
+$steam = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam").InstallPath
+if (!(Test-Path (Join-Path $steam "plugins"))) {
+    New-Item -Path (Join-Path $steam "plugins") -ItemType Directory | Out-Null
+}
+
+$pluginPath = Join-Path $steam "plugins\$name"
+$zipPath = Join-Path $env:TEMP "$name.zip"
+
+Invoke-WebRequest -Uri $link -OutFile $zipPath
+Expand-Archive -Path $zipPath -DestinationPath $pluginPath -Force
+Remove-Item $zipPath -ErrorAction SilentlyContinue
+
+Write-Host ""
+Write-Host "Instalação concluída com sucesso!" -ForegroundColor Green
+pause
