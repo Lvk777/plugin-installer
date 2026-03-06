@@ -8,8 +8,24 @@ const {
   logAction
 } = require('./_lib/utils');
 
+async function sendDiscord(message) {
+  const webhook = process.env.DISCORD_WEBHOOK;
+  if (!webhook) return;
+
+  try {
+    await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: message })
+    });
+  } catch (_) {}
+}
+
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido' });
+  }
+
   if (!requireAuth(req, res)) return;
 
   try {
@@ -52,10 +68,23 @@ module.exports = async (req, res) => {
       .select()
       .single();
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
 
     const domain = process.env.PUBLIC_SITE_URL || 'https://plugin-installer.vercel.app';
     const batContent = buildBatContent({ domain });
+
+    const customerLabel =
+      customerName || customerContact || customerEmail || 'Não informado';
+
+    await sendDiscord(
+      `🔑 Nova licença gerada\n` +
+      `Cliente: ${customerLabel}\n` +
+      `Tipo: ${tipo || 'unique'}\n` +
+      `Valor: ${price || 'N/A'}\n` +
+      `Licença: ${licenseKey}`
+    );
 
     await logAction('generate_license', {
       license_key: licenseKey,
